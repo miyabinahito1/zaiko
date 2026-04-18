@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>在庫管理</title>
+<style>
+:root{--bg:#0f1117;--sf:#1a1d27;--sf2:#22263a;--bd:#2e3250;--ac:#4f7cff;--ac2:#38d9a9;--ng:#ff6b6b;--wn:#f5a623;--tx:#eef0f8;--mt:#8891b4;--r:14px;--rs:8px;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--tx);font-family:'Hiragino Sans','Noto Sans JP',sans-serif;padding-bottom:3rem;}
+.hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:14px 20px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;}
+.hdr h1{font-size:17px;font-weight:700;}
+.dot{margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--ac2);}
+.dot.off{background:var(--ng);}
+.wrap{padding:16px;display:flex;flex-direction:column;gap:16px;}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px;}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mt);margin-bottom:12px;}
+.cam-box{position:relative;background:#111;border-radius:var(--rs);overflow:hidden;width:100%;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;}
+#vid{width:100%;height:100%;object-fit:cover;display:none;}
+.sl{display:none;position:absolute;left:10%;right:10%;height:2px;background:linear-gradient(90deg,transparent,var(--ac),transparent);animation:sc 2s ease-in-out infinite;}
+@keyframes sc{0%,100%{top:15%}50%{top:80%}}
+.co{display:none;position:absolute;width:24px;height:24px;border-color:var(--ac);border-style:solid;border-width:0;}
+.co.tl{top:6%;left:6%;border-top-width:3px;border-left-width:3px;}
+.co.tr{top:6%;right:6%;border-top-width:3px;border-right-width:3px;}
+.co.bl{bottom:6%;left:6%;border-bottom-width:3px;border-left-width:3px;}
+.co.br{bottom:6%;right:6%;border-bottom-width:3px;border-right-width:3px;}
+.ph{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--mt);font-size:13px;}
+.ph-ic{font-size:36px;}
+.cam-msg{display:none;position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);color:#fff;font-size:12px;padding:6px;text-align:center;}
+.gbtn{display:block;width:100%;padding:14px;border-radius:var(--rs);border:none;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;text-align:center;}
+.gbtn.ac{background:var(--ac);color:#fff;}
+.gbtn.ng{background:var(--ng);color:#fff;}
+.gbtn.wn{background:var(--wn);color:#fff;}
+.gbtn.gray{background:var(--sf2);color:var(--tx);border:1px solid var(--bd);}
+.gbtn:disabled{opacity:.5;}
+.err{display:none;background:#ff6b6b15;border:1px solid var(--ng);border-radius:var(--rs);padding:12px;margin-top:10px;font-size:13px;color:var(--ng);line-height:1.6;white-space:pre-wrap;}
+.err.on{display:block;}
+.pi{display:none;background:var(--sf2);border-radius:var(--rs);padding:14px;margin-top:10px;}
+.pi.on{display:block;}
+.pr{display:flex;justify-content:space-between;align-items:center;padding:6px 0;}
+.pr:not(:last-child){border-bottom:1px solid var(--bd);}
+.pk{font-size:12px;color:var(--mt);}
+.pv{font-size:14px;font-weight:600;}
+.pv.bc{font-family:monospace;font-size:12px;color:var(--ac);word-break:break-all;}
+.sb{display:inline-flex;align-items:center;gap:5px;font-size:14px;font-weight:800;padding:2px 10px;border-radius:20px;border:1.5px solid var(--ac2);color:var(--ac2);}
+.sb.lw{border-color:var(--wn);color:var(--wn);}
+.sb.zr{border-color:var(--ng);color:var(--ng);}
+.dt{font-size:12px;color:var(--mt);text-align:center;margin-top:8px;}
+.nb{display:none;background:#f5a62315;border:1.5px solid var(--wn);border-radius:var(--rs);padding:12px;margin-top:10px;font-size:13px;color:var(--wn);font-weight:600;text-align:center;}
+.nb.on{display:block;}
+.rf{display:none;margin-top:12px;}
+.rf.on{display:block;}
+.fl{margin-bottom:10px;}
+.fl label{display:block;font-size:12px;color:var(--mt);margin-bottom:5px;}
+.fl input{width:100%;padding:12px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--tx);font-size:15px;outline:none;}
+.fl input:focus{border-color:var(--ac);}
+.bg{display:grid;gap:8px;}
+.c2{grid-template-columns:1fr 1fr;}
+.c3{grid-template-columns:1fr 1fr 1fr;}
+.c5{grid-template-columns:repeat(5,1fr);}
+.sb2{padding:14px 4px;border-radius:var(--rs);border:1.5px solid var(--bd);background:var(--sf2);color:var(--tx);font-size:14px;font-weight:600;cursor:pointer;text-align:center;width:100%;}
+.sb2:active{opacity:.7;}
+.s-out{background:#ff6b6b22;border-color:var(--ng);color:var(--ng);}
+.s-in{background:#38d9a922;border-color:var(--ac2);color:var(--ac2);}
+.s-qty{background:#4f7cff22;border-color:var(--ac);color:var(--ac);}
+.s-nm{background:#f5a62322;border-color:var(--wn);color:var(--wn);}
+#subBtn{width:100%;padding:18px;border-radius:var(--r);border:none;background:linear-gradient(135deg,var(--ac),#7c4fff);color:#fff;font-size:18px;font-weight:800;cursor:pointer;display:none;box-shadow:0 4px 20px rgba(79,124,255,.35);}
+#subBtn.on{display:block;}
+#subBtn:disabled{opacity:.5;}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--sf);border:1px solid var(--bd);border-radius:30px;padding:11px 20px;font-size:13px;font-weight:600;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis;}
+.toast.on{transform:translateX(-50%) translateY(0);}
+.toast.ok{border-color:var(--ac2);color:var(--ac2);}
+.toast.er{border-color:var(--ng);color:var(--ng);}
+.toast.wn{border-color:var(--wn);color:var(--wn);}
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:flex-end;}
+.ov.on{display:flex;}
+.mo{background:var(--sf);border-radius:var(--r) var(--r) 0 0;padding:22px 18px;width:100%;}
+.mo h2{font-size:16px;margin-bottom:14px;}
+.mo label{display:block;font-size:13px;color:var(--mt);margin-bottom:5px;margin-top:12px;}
+.mo input{width:100%;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--tx);font-size:14px;padding:11px;}
+.mb{display:flex;gap:10px;margin-top:18px;}
+.mb button{flex:1;padding:13px;border-radius:var(--rs);border:none;font-size:15px;font-weight:700;cursor:pointer;}
+.bs{background:var(--ac);color:#fff;}
+.bc2{background:var(--sf2);color:var(--tx);}
+.gear{position:fixed;top:12px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--mt);z-index:101;}
+.ld{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+.ld.on{display:flex;}
+.sp{width:30px;height:30px;border:3px solid var(--bd);border-top-color:var(--ac);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld span{font-size:14px;color:var(--tx);}
+.manual-area{margin-top:10px;display:none;}
+.manual-area input{width:100%;padding:12px;background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--tx);font-size:15px;outline:none;margin-bottom:8px;}
+.cfg-note{font-size:12px;color:var(--ng);margin-top:8px;text-align:center;display:none;}
+.cfg-note.on{display:block;}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <span style="font-size:22px">📦</span>
+  <h1>在庫管理</h1>
+  <div class="dot" id="dot"></div>
+</div>
+<button class="gear" onclick="openGear()">⚙️</button>
+
+<div class="wrap">
+  <div class="card">
+    <div class="lbl">バーコードスキャン</div>
+    <div class="cam-box" id="camBox">
+      <video id="vid" playsinline muted autoplay></video>
+      <div class="sl" id="sl"></div>
+      <div class="co tl" id="coTL"></div><div class="co tr" id="coTR"></div>
+      <div class="co bl" id="coBL"></div><div class="co br" id="coBR"></div>
+      <div class="ph" id="ph"><div class="ph-ic">📷</div><div>ボタンを押してスキャン</div></div>
+      <div class="cam-msg" id="camMsg">読み取り中...</div>
+    </div>
+    <div class="err" id="errBox"></div>
+    <button class="gbtn ac" id="scanBtn" onclick="toggleScan()">📷 スキャン開始</button>
+    <div class="manual-area" id="manualArea">
+      <input type="number" id="manualInput" placeholder="バーコード番号を数字で入力" inputmode="numeric">
+      <button class="gbtn gray" onclick="doManual()">✔ この番号で検索</button>
+    </div>
+    <div class="pi" id="partInfo">
+      <div class="pr"><span class="pk">バーコード</span><span class="pv bc" id="dBC">-</span></div>
+      <div class="pr"><span class="pk">品目</span><span class="pv" id="dItem">-</span></div>
+      <div class="pr"><span class="pk">型式</span><span class="pv" id="dModel">-</span></div>
+      <div class="pr"><span class="pk">在庫数</span><span class="pv" id="dStock">-</span></div>
+      <div class="dt" id="dDt"></div>
+    </div>
+    <div class="nb" id="newBanner">⚠️ 未登録の部品です。品目と型式を入力して登録してください。</div>
+    <div class="rf" id="regForm">
+      <div class="pr" style="padding:8px 0 4px"><span class="pk">バーコード</span><span class="pv bc" id="newBC">-</span></div>
+      <div class="fl"><label>品目（例：電磁弁）</label><input type="text" id="inItem" placeholder="品目を入力"></div>
+      <div class="fl"><label>型式（例：VFS3130-5FZ）</label><input type="text" id="inModel" placeholder="型式を入力"></div>
+      <button class="gbtn wn" onclick="doRegister()">📋 マスタに登録する</button>
+    </div>
+  </div>
+
+  <div class="card" id="actCard" style="display:none">
+    <div class="lbl">操作</div>
+    <div class="bg c2">
+      <button class="sb2" onclick="sel(this,'act','s-out')" data-v="持ち出し">🔴 持ち出し</button>
+      <button class="sb2" onclick="sel(this,'act','s-in')"  data-v="返却">🟢 返却</button>
+    </div>
+  </div>
+
+  <div class="card" id="qtyCard" style="display:none">
+    <div class="lbl">個数</div>
+    <div class="bg c5" id="qtyBtns"></div>
+  </div>
+
+  <div class="card" id="nmCard" style="display:none">
+    <div class="lbl">担当者</div>
+    <div id="nmBtns"></div>
+  </div>
+
+  <button id="subBtn" onclick="doSubmit()">✅ 記録する</button>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="ld" id="ld"><div class="sp"></div><span id="ldMsg">送信中...</span></div>
+
+<div class="ov" id="ov">
+  <div class="mo">
+    <h2>⚙️ 設定</h2>
+    <label>GAS WebアプリのURL</label>
+    <input type="url" id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    <div class="cfg-note on" id="cfgNote">※ GAS URLが未設定です。設定してください。</div>
+    <label>担当者名（カンマ区切り）</label>
+    <input type="text" id="cfgNm" placeholder="田中,佐藤,鈴木,高橋,伊藤">
+    <div class="mb">
+      <button class="bc2" onclick="closeGear()">キャンセル</button>
+      <button class="bs"  onclick="saveGear()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var GAS = localStorage.getItem('gasUrl') || '';
+var st  = {bc:'',item:'',model:'',stock:0,act:'',qty:'',name:'',dt:''};
+var camStream = null, rafId = null, scanning = false, master = {};
+
+// 起動時にGAS未設定なら設定画面を開く
+window.onload = function() {
+  buildBtns();
+  if (!GAS) {
+    openGear();
+  } else {
+    fetchMaster();
+  }
+};
+
+// ===== 設定 =====
+function getNames() { return (localStorage.getItem('names')||'田中,佐藤,鈴木,高橋,伊藤').split(',').map(function(s){return s.trim();}).filter(Boolean); }
+function openGear() {
+  document.getElementById('cfgUrl').value = GAS;
+  document.getElementById('cfgNm').value  = getNames().join(',');
+  document.getElementById('cfgNote').className = GAS ? 'cfg-note' : 'cfg-note on';
+  document.getElementById('ov').classList.add('on');
+}
+function closeGear() { document.getElementById('ov').classList.remove('on'); }
+function saveGear() {
+  var url = document.getElementById('cfgUrl').value.trim();
+  if (!url) { alert('GAS URLを入力してください'); return; }
+  GAS = url;
+  localStorage.setItem('gasUrl', url);
+  localStorage.setItem('names', document.getElementById('cfgNm').value.trim());
+  closeGear();
+  buildBtns();
+  fetchMaster();
+  showToast('設定を保存しました','ok');
+}
+
+// ===== ボタン生成 =====
+function buildBtns() {
+  var qw = document.getElementById('qtyBtns'); qw.innerHTML = '';
+  [1,2,3,5,10].forEach(function(v) {
+    var b = document.createElement('button');
+    b.className = 'sb2'; b.setAttribute('data-v', v); b.textContent = v;
+    b.setAttribute('onclick','sel(this,"qty","s-qty")');
+    qw.appendChild(b);
+  });
+  var names = getNames(), nw = document.getElementById('nmBtns'); nw.innerHTML = '';
+  var c = names.length <= 2 ? 'c2' : names.length === 3 ? 'c3' : 'c2';
+  nw.className = 'bg ' + c;
+  names.forEach(function(n) {
+    var b = document.createElement('button');
+    b.className = 'sb2'; b.setAttribute('data-v', n); b.textContent = n;
+    b.setAttribute('onclick','sel(this,"name","s-nm")');
+    nw.appendChild(b);
+  });
+}
+
+function sel(el, g, cls) {
+  var card = g==='act' ? 'actCard' : g==='qty' ? 'qtyCard' : 'nmCard';
+  document.querySelectorAll('#'+card+' button').forEach(function(b){b.className='sb2';});
+  el.classList.add(cls);
+  if (g==='act') st.act = el.getAttribute('data-v');
+  else if (g==='qty') st.qty = el.getAttribute('data-v');
+  else st.name = el.getAttribute('data-v');
+  chkReady();
+}
+function chkReady() { document.getElementById('subBtn').className = (st.bc&&st.act&&st.qty&&st.name) ? 'on' : ''; }
+
+// ===== ユーティリティ =====
+function p2(n){return String(n).padStart(2,'0');}
+function fmtDt(d){return d.getFullYear()+'/'+p2(d.getMonth()+1)+'/'+p2(d.getDate())+' '+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());}
+function sbadge(s){var c=s===0?'zr':s<=2?'lw':'';var i=s===0?'⛔':s<=2?'⚠️':'✅';return '<span class="sb '+c+'">'+i+' '+s+' 個</span>';}
+function showToast(msg,type){var e=document.getElementById('toast');e.textContent=msg;e.className='toast '+type+' on';clearTimeout(e._t);e._t=setTimeout(function(){e.classList.remove('on');},3500);}
+function showErr(msg){var e=document.getElementById('errBox');e.textContent=msg;e.className='err on';}
+function hideErr(){document.getElementById('errBox').className='err';}
+function setLd(on,msg){document.getElementById('ldMsg').textContent=msg||'送信中...';document.getElementById('ld').className=on?'ld on':'ld';}
+
+// ===== マスタ取得 =====
+function fetchMaster() {
+  if (!GAS) return;
+  fetch(GAS+'?action=getMaster')
+    .then(function(r){return r.json();})
+    .then(function(j){master=j.master||{};document.getElementById('dot').className='dot';})
+    .catch(function(){document.getElementById('dot').className='dot off';});
+}
+
+// ===== カメラ =====
+function toggleScan() { if (scanning) { stopCam(); } else { startCam(); } }
+
+function startCam() {
+  hideErr();
+  document.getElementById('manualArea').style.display = 'none';
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showErr('カメラが使用できません。手動入力をご利用ください。');
+    document.getElementById('manualArea').style.display = 'block';
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:960}}})
+  .then(function(stream) {
+    camStream = stream;
+    var vid = document.getElementById('vid');
+    vid.srcObject = stream;
+    vid.style.display = 'block';
+    document.getElementById('ph').style.display = 'none';
+    document.getElementById('sl').style.display = 'block';
+    document.getElementById('camMsg').style.display = 'block';
+    ['coTL','coTR','coBL','coBR'].forEach(function(id){document.getElementById(id).style.display='block';});
+    document.getElementById('scanBtn').textContent = '⏹ スキャン停止';
+    document.getElementById('scanBtn').className = 'gbtn ng';
+    scanning = true;
+    vid.play().then(function(){startDecode();}).catch(function(e){showErr('映像再生エラー: '+e.message);});
+  })
+  .catch(function(err) {
+    var msg = 'カメラエラー: '+err.name+'\n';
+    if (err.name==='NotAllowedError') msg = 'カメラの許可が必要です。\nアドレスバー左の🔒アイコン→カメラ→「許可」に変更してください。';
+    else if (err.name==='NotFoundError') msg = 'カメラが見つかりません。';
+    else if (err.name==='NotReadableError') msg = 'カメラが他のアプリで使用中です。';
+    showErr(msg);
+    document.getElementById('manualArea').style.display = 'block';
+  });
+}
+
+function stopCam() {
+  scanning = false;
+  cancelAnimationFrame(rafId);
+  if (camStream) { camStream.getTracks().forEach(function(t){t.stop();}); camStream = null; }
+  var vid = document.getElementById('vid');
+  vid.srcObject = null; vid.style.display = 'none';
+  document.getElementById('ph').style.display = 'flex';
+  document.getElementById('sl').style.display = 'none';
+  document.getElementById('camMsg').style.display = 'none';
+  ['coTL','coTR','coBL','coBR'].forEach(function(id){document.getElementById(id).style.display='none';});
+  document.getElementById('scanBtn').textContent = '📷 スキャン開始';
+  document.getElementById('scanBtn').className = 'gbtn ac';
+}
+
+function startDecode() {
+  var vid = document.getElementById('vid');
+  if ('BarcodeDetector' in window) {
+    var detector = new BarcodeDetector({formats:['ean_13','ean_8','code_128','code_39','qr_code','upc_a','upc_e']});
+    document.getElementById('camMsg').textContent = '読み取り中...';
+    function loop() {
+      if (!scanning) return;
+      detector.detect(vid)
+        .then(function(codes){
+          if (codes.length > 0) { onDetected(codes[0].rawValue); return; }
+          rafId = requestAnimationFrame(loop);
+        })
+        .catch(function(){ rafId = requestAnimationFrame(loop); });
+    }
+    rafId = requestAnimationFrame(loop);
+  } else {
+    stopCam();
+    showErr('お使いの環境ではカメラスキャンが利用できません。手動入力をご利用ください。');
+    document.getElementById('manualArea').style.display = 'block';
+  }
+}
+
+function doManual() {
+  var v = document.getElementById('manualInput').value.trim();
+  if (v) { hideErr(); onDetected(v); }
+  else { showToast('番号を入力してください','wn'); }
+}
+
+// ===== スキャン結果 =====
+function onDetected(barcode) {
+  stopCam();
+  if (navigator.vibrate) navigator.vibrate(60);
+  var now = new Date();
+  st.bc = barcode; st.dt = fmtDt(now);
+  var part = master[barcode];
+  document.getElementById('partInfo').classList.remove('on');
+  document.getElementById('newBanner').classList.remove('on');
+  document.getElementById('regForm').classList.remove('on');
+  document.getElementById('actCard').style.display = 'none';
+  document.getElementById('qtyCard').style.display = 'none';
+  document.getElementById('nmCard').style.display  = 'none';
+  document.getElementById('subBtn').className = '';
+  if (part) {
+    st.item=part.item; st.model=part.model; st.stock=part.stock;
+    document.getElementById('dBC').textContent    = barcode;
+    document.getElementById('dItem').textContent  = part.item;
+    document.getElementById('dModel').textContent = part.model;
+    document.getElementById('dStock').innerHTML   = sbadge(part.stock);
+    document.getElementById('dDt').textContent    = '📅 '+st.dt;
+    document.getElementById('partInfo').classList.add('on');
+    document.getElementById('actCard').style.display = '';
+    document.getElementById('qtyCard').style.display = '';
+    document.getElementById('nmCard').style.display  = '';
+    if (part.stock===0) showToast('⛔ この部品の在庫は0個です','wn');
+    st.act=''; st.qty=''; st.name='';
+    document.querySelectorAll('.sb2').forEach(function(b){b.className='sb2';});
+  } else {
+    st.item=''; st.model=''; st.stock=0;
+    document.getElementById('newBC').textContent   = barcode;
+    document.getElementById('inItem').value        = '';
+    document.getElementById('inModel').value       = '';
+    document.getElementById('newBanner').classList.add('on');
+    document.getElementById('regForm').classList.add('on');
+  }
+}
+
+// ===== 新規登録 =====
+function doRegister() {
+  var item  = document.getElementById('inItem').value.trim();
+  var model = document.getElementById('inModel').value.trim();
+  if (!item||!model) { showToast('品目と型式を両方入力してください','wn'); return; }
+  setLd(true,'マスタに登録中...');
+  fetch(GAS, {method:'POST', body:JSON.stringify({action:'registerPart',barcode:st.bc,item:item,model:model})})
+  .then(function(r){return r.json();})
+  .then(function(j){
+    if (j.status==='ok'||j.status==='already_exists') {
+      master[st.bc]={item:item,model:model,stock:0}; st.item=item; st.model=model; st.stock=0;
+      document.getElementById('newBanner').classList.remove('on');
+      document.getElementById('regForm').classList.remove('on');
+      document.getElementById('dBC').textContent    = st.bc;
+      document.getElementById('dItem').textContent  = item;
+      document.getElementById('dModel').textContent = model;
+      document.getElementById('dStock').innerHTML   = sbadge(0);
+      document.getElementById('dDt').textContent    = '📅 '+st.dt;
+      document.getElementById('partInfo').classList.add('on');
+      document.getElementById('actCard').style.display = '';
+      document.getElementById('qtyCard').style.display = '';
+      document.getElementById('nmCard').style.display  = '';
+      st.act=''; st.qty=''; st.name='';
+      document.querySelectorAll('.sb2').forEach(function(b){b.className='sb2';});
+      showToast('✅ 登録しました！操作を選択してください','ok');
+    } else { showToast('❌ 登録失敗: '+(j.error||'不明'),'er'); }
+  })
+  .catch(function(e){showToast('❌ エラー: '+e.message,'er');})
+  .finally(function(){setLd(false);});
+}
+
+// ===== 記録送信 =====
+function doSubmit() {
+  var btn = document.getElementById('subBtn');
+  if (btn.disabled) return;
+  btn.disabled = true; setLd(true,'送信中...');
+  fetch(GAS, {method:'POST', body:JSON.stringify({datetime:new Date().toISOString(),name:st.name,moveAction:st.act,barcode:st.bc,item:st.item,model:st.model,qty:Number(st.qty)})})
+  .then(function(r){return r.json();})
+  .then(function(j){
+    if (j.status==='ok') {
+      var ns = j.newStock;
+      if (master[st.bc]) master[st.bc].stock = ns;
+      var ss = ns<=0?'⛔ 在庫0':ns<=2?'⚠️ 残り'+ns+'個':'残り'+ns+'個';
+      showToast('✅ '+st.act+' × '+st.qty+'個 ／ '+ss,'ok');
+      st={bc:'',item:'',model:'',stock:0,act:'',qty:'',name:'',dt:''};
+      document.getElementById('partInfo').classList.remove('on');
+      document.getElementById('actCard').style.display = 'none';
+      document.getElementById('qtyCard').style.display = 'none';
+      document.getElementById('nmCard').style.display  = 'none';
+      document.getElementById('subBtn').className = '';
+    } else { showToast('❌ 送信失敗: '+(j.error||'不明'),'er'); }
+  })
+  .catch(function(e){showToast('❌ エラー: '+e.message,'er');})
+  .finally(function(){btn.disabled=false;setLd(false);});
+}
+</script>
+</body>
+</html>
