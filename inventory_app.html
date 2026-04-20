@@ -197,6 +197,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Hiragino Sans','Noto Sans
     <div class="lbl">QRコード一覧</div>
     <input class="qr-search" type="text" id="qrSearch" placeholder="品目・説明・規格で絞り込み" oninput="filterQR()">
     <button class="gbtn gr no-print" onclick="window.print()">🖨️ PDF印刷（全件）</button>
+    <button class="gbtn wn no-print" id="bulkIssueBtn" onclick="issueAllIds()">⚡ 未発行を一括発行</button>
     <div class="qr-list" id="qrList">
       <div style="color:var(--mt);font-size:13px;text-align:center;padding:20px">読み込み中...</div>
     </div>
@@ -224,7 +225,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Hiragino Sans','Noto Sans
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <script>
-var GAS = localStorage.getItem('gasUrl') || '';
+var GAS = localStorage.getItem('gasUrl') || 'https://script.google.com/macros/s/AKfycbyBw9Upq4CRSWzOwkbz3jUDk3-QPo6D6GyIVhv8EnAhn6mUxbncA7FfX-wBiB3Ztrok/exec';
 var st  = {id:'',item:'',desc:'',spec:'',stock:0,act:'',qty:'',name:'',dt:''};
 var camStream=null, rafId=null, scanning=false, master={};
 var allItems=[], filteredItems=[];
@@ -241,7 +242,7 @@ function switchTab(name) {
   if(name==='qr') loadQRList();
 }
 
-function getNames(){return(localStorage.getItem('names')||'田中,佐藤,鈴木,高橋,伊藤').split(',').map(function(s){return s.trim();}).filter(Boolean);}
+function getNames(){return(localStorage.getItem('names')||'松原,味村,栗田,松田,深野').split(',').map(function(s){return s.trim();}).filter(Boolean);}
 function openGear(){document.getElementById('cfgUrl').value=GAS;document.getElementById('cfgNm').value=getNames().join(',');document.getElementById('cfgNote').className=GAS?'cfg-note':'cfg-note on';document.getElementById('ov').classList.add('on');}
 function closeGear(){document.getElementById('ov').classList.remove('on');}
 function saveGear(){
@@ -334,6 +335,24 @@ function renderQRList(items){
 }
 
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function issueAllIds(){
+  var unissued=allItems.filter(function(it){return !it.id;});
+  if(unissued.length===0){showToast('未発行の部品はありません','wn');return;}
+  if(!confirm(unissued.length+'件の未発行部品に管理番号を発行します。よろしいですか？')){return;}
+  var btn=document.getElementById('bulkIssueBtn');
+  btn.disabled=true;btn.textContent='発行中...';
+  setLd(true,'一括発行中... ('+unissued.length+'件)');
+  fetch(GAS,{method:'POST',body:JSON.stringify({action:'assignAllItemIds'})})
+  .then(function(r){return r.json();})
+  .then(function(j){
+    if(j.status==='ok'){
+      showToast('✅ '+j.count+'件に管理番号を発行しました','ok');
+      loadQRList();fetchMaster();
+    } else {showToast('❌ 発行失敗: '+(j.error||'不明'),'er');}
+  }).catch(function(e){showToast('❌ エラー: '+e.message,'er');})
+  .finally(function(){btn.disabled=false;btn.textContent='⚡ 未発行を一括発行';setLd(false);});
+}
 
 function issueId(row,btn){
   btn.disabled=true;btn.textContent='発行中...';
