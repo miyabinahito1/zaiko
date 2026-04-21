@@ -229,6 +229,7 @@ var GAS = localStorage.getItem('gasUrl') || 'https://script.google.com/macros/s/
 var st  = {id:'',item:'',desc:'',spec:'',stock:0,act:'',qty:'',name:'',dt:''};
 var camStream=null, rafId=null, scanning=false, master={};
 var allItems=[], filteredItems=[];
+var DEFAULT_NAMES ='松原,味村,栗田,松田,深野'; //担当者名のデフォルト
 
 window.onload = function() {
   buildBtns();
