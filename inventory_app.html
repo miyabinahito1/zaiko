@@ -232,9 +232,13 @@ var allItems=[], filteredItems=[];
 var DEFAULT_NAMES ='松原,味村,栗田,松田,深野'; //担当者名のデフォルト
 
 window.onload = function() {
-  buildBtns();
-  if (!GAS) { openGear(); } else { fetchMaster(); }
+if (!localStorage.getItem('names')) {
+localStorage.setItem('names', DEFAULT_NAMES);
+}
+buildBtns();
+if (!GAS) { openGear(); } else { fetchMaster(); }
 };
+
 
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(function(t,i){t.className='tab'+((['scan','qr'][i]===name)?' on':'');});
