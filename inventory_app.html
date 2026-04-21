@@ -232,9 +232,7 @@ var allItems=[], filteredItems=[];
 var DEFAULT_NAMES ='松原,味村,栗田,松田,深野'; //担当者名のデフォルト
 
 window.onload = function() {
-if (!localStorage.getItem('names')) {
-localStorage.setItem('names', DEFAULT_NAMES);
-}
+  localStorage.setItem('names', DEFAULT_NAMES);
 buildBtns();
 if (!GAS) { openGear(); } else { fetchMaster(); }
 };
