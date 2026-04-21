@@ -186,6 +186,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Hiragino Sans','Noto Sans
     <div class="lbl">担当者</div>
     <div id="nmBtns"></div>
   </div>
+  <div class="err" id="stockWarn"></div>
   <button id="subBtn" onclick="doSubmit()">✅ 記録する</button>
 </div>
 </div>
@@ -215,7 +216,7 @@ body{background:var(--bg);color:var(--tx);font-family:'Hiragino Sans','Noto Sans
     <input type="url" id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec">
     <div class="cfg-note on" id="cfgNote">※ GAS URLが未設定です。設定してください。</div>
     <label>担当者名（カンマ区切り）</label>
-    <input type="text" id="cfgNm" placeholder="松原,味村,栗田,松田,深野">
+    <input type="text" id="cfgNm" placeholder="田中,佐藤,鈴木,高橋,伊藤">
     <div class="mb">
       <button class="bc2" onclick="closeGear()">キャンセル</button>
       <button class="bs"  onclick="saveGear()">保存</button>
@@ -225,18 +226,15 @@ body{background:var(--bg);color:var(--tx);font-family:'Hiragino Sans','Noto Sans
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 <script>
-var GAS = localStorage.getItem('gasUrl') || 'https://script.google.com/macros/s/AKfycbyBw9Upq4CRSWzOwkbz3jUDk3-QPo6D6GyIVhv8EnAhn6mUxbncA7FfX-wBiB3Ztrok/exec';
+var GAS = localStorage.getItem('gasUrl') || '';
 var st  = {id:'',item:'',desc:'',spec:'',stock:0,act:'',qty:'',name:'',dt:''};
 var camStream=null, rafId=null, scanning=false, master={};
 var allItems=[], filteredItems=[];
-var DEFAULT_NAMES ='松原,味村,栗田,松田,深野'; //担当者名のデフォルト
 
 window.onload = function() {
-  localStorage.setItem('names', DEFAULT_NAMES);
-buildBtns();
-if (!GAS) { openGear(); } else { fetchMaster(); }
+  buildBtns();
+  if (!GAS) { openGear(); } else { fetchMaster(); }
 };
-
 
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(function(t,i){t.className='tab'+((['scan','qr'][i]===name)?' on':'');});
@@ -245,7 +243,7 @@ function switchTab(name) {
   if(name==='qr') loadQRList();
 }
 
-function getNames(){return(localStorage.getItem('names')||'松原,味村,栗田,松田,深野').split(',').map(function(s){return s.trim();}).filter(Boolean);}
+function getNames(){return(localStorage.getItem('names')||'田中,佐藤,鈴木,高橋,伊藤').split(',').map(function(s){return s.trim();}).filter(Boolean);}
 function openGear(){document.getElementById('cfgUrl').value=GAS;document.getElementById('cfgNm').value=getNames().join(',');document.getElementById('cfgNote').className=GAS?'cfg-note':'cfg-note on';document.getElementById('ov').classList.add('on');}
 function closeGear(){document.getElementById('ov').classList.remove('on');}
 function saveGear(){
@@ -272,7 +270,21 @@ function sel(el,g,cls){
   else st.name=el.getAttribute('data-v');
   chkReady();
 }
-function chkReady(){document.getElementById('subBtn').className=(st.id&&st.act&&st.qty&&st.name)?'on':'';}
+function chkReady(){ //在庫数以上の場合にはエラー
+  var warn=document.getElementById('stockWarn');
+  if(st.act==='持ち出し'&&st.qty&&st.stock>=0){
+    var qty=Number(st.qty);
+    if(qty>st.stock){
+      warn.textContent='⛔ 在庫数が足りません（在庫：'+st.stock+'個、持ち出し：'+qty+'個）';
+      warn.className='err on';
+      document.getElementById('subBtn').className='';
+      return;
+    }
+  }
+  warn.className='err';
+  var ok=st.id&&st.act&&st.qty&&st.name;
+  document.getElementById('subBtn').className=ok?'on':'';
+}
 
 function p2(n){return String(n).padStart(2,'0');}
 function fmtDt(d){return d.getFullYear()+'/'+p2(d.getMonth()+1)+'/'+p2(d.getDate())+' '+p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds());}
