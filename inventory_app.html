@@ -122,15 +122,21 @@ body{background:var(--bg);color:var(--tx);font-family:'Hiragino Sans','Noto Sans
 @media print{
   body{background:#fff;color:#000;padding:0;}
   .hdr,.tabs,.gear,.toast,.ld,.ov,.gbtn{display:none!important;}
+  .confirm-ov{display:none!important;}
   #scanPane{display:none!important;}
   #qrPane{display:block!important;}
   .qr-search{display:none!important;}
-  .qr-list{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-  .qr-card{border:1px solid #ccc;border-radius:4px;padding:8px;break-inside:avoid;background:#fff;}
-  .qr-item{font-size:11px;color:#000;}
-  .qr-sub{font-size:10px;color:#555;}
-  .qr-id{font-size:10px;color:#333;}
+  .wrap{padding:4px;}
+  .card{border:none;padding:0;}
+  .lbl{display:none;}
+  .qr-list{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+  .qr-card{border:1px solid #bbb;border-radius:4px;padding:10px 12px;break-inside:avoid;background:#fff;display:flex;align-items:center;gap:12px;min-height:90px;}
+  .qr-img canvas{width:90px!important;height:90px!important;}
+  .qr-item{font-size:14px;font-weight:700;color:#000;margin-bottom:3px;white-space:normal;}
+  .qr-sub{font-size:12px;color:#444;white-space:normal;overflow:visible;text-overflow:unset;}
+  .qr-id{font-size:11px;color:#333;margin-top:4px;}
   .qr-no-id,.badge-new,.no-print{display:none!important;}
+  @page{margin:10mm;size:A4 portrait;}
 }
 </style>
 </head>
@@ -345,7 +351,7 @@ function renderQRList(items){
   items.forEach(function(it){
     var card=document.createElement('div');card.className='qr-card';
     var qrWrap=document.createElement('div');qrWrap.className='qr-img';
-    var canvas=document.createElement('canvas');canvas.width=80;canvas.height=80;
+    var canvas=document.createElement('canvas');canvas.width=90;canvas.height=90;
     qrWrap.appendChild(canvas);
     var info=document.createElement('div');info.className='qr-info';
     var hasId=!!it.id;
@@ -364,7 +370,7 @@ function renderQRList(items){
     card.appendChild(qrWrap);card.appendChild(info);
     list.appendChild(card);
     if(hasId){
-      QRCode.toCanvas(canvas,it.id,{width:80,margin:1,color:{dark:'#000',light:'#fff'}},function(){});
+      QRCode.toCanvas(canvas,it.id,{width:90,margin:1,color:{dark:'#000',light:'#fff'}},function(){});
     } else {
       var ctx=canvas.getContext('2d');
       ctx.fillStyle='#2e3250';ctx.fillRect(0,0,80,80);
